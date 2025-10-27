@@ -1,30 +1,38 @@
-    class AMage : AActor
+class AMage : AActor
+{
+    UPROPERTY(DefaultComponent, RootComponent)
+    USkeletalMeshComponent Body;
+
+    UPROPERTY(DefaultComponent, Attach = "Body")
+    USphereComponent Collision;
+
+    ACell CurrentCell;
+    
+    UPROPERTY()
+    AGridSystem GridSystem; 
+
+
+    bool bDragging = false;
+
+
+    // Creación del mago con sus collisiones
+    UFUNCTION(BlueprintOverride)
+    void BeginPlay()
     {
-        UPROPERTY(DefaultComponent, RootComponent)
-        USkeletalMeshComponent Body;
+        Collision.SetSphereRadius(50.0);
+        Collision.SetGenerateOverlapEvents(true);
 
-        UPROPERTY(DefaultComponent, Attach = "Body")
-        USphereComponent Collision;
+        Body.SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+        Body.SetCollisionProfileName(FName("BlockAll"));
+        Body.SetGenerateOverlapEvents(true);    
 
-        ACell CurrentCell;
-        
-        AGridSystem GridSystem; 
+        SetActorLocation(FVector(GetActorLocation().X,GetActorLocation().Y, -30));
+        SetActorRotation(FRotator(GetActorRotation().Pitch, -90, GetActorRotation().Roll));
 
+        EnableInput(GetWorld().GetGameInstance().GetFirstLocalPlayerController());
+    }
 
-        bool bDragging = false;
-
-        UFUNCTION(BlueprintOverride)
-        void BeginPlay()
-        {
-            Collision.SetSphereRadius(50.0);
-            Collision.SetGenerateOverlapEvents(true);
-
-            Body.SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-            Body.SetCollisionProfileName(FName("BlockAll"));
-            Body.SetGenerateOverlapEvents(true);    
-
-            EnableInput(GetWorld().GetGameInstance().GetFirstLocalPlayerController());
-        }
+    // Input, hace al mago agarrable
     void CheckMouseInput()
     {
         APlayerController pc = GetWorld().GetGameInstance().GetFirstLocalPlayerController();
@@ -47,7 +55,6 @@
         {
             bDragging = false;
 
-            // Centrar en la celda más cercana al soltar
             if (GridSystem != nullptr && GridSystem.Cells.Num() > 0)
             {
                 float closestDist = 999999.0;
@@ -55,6 +62,7 @@
                 for (int i = 0; i < GridSystem.Cells.Num(); i++)
                 {
                     ACell cell = GridSystem.Cells[i];
+                    // Print("Location cell" + cell.GetActorLocation());
                     float dist = (cell.GetActorLocation() - GetActorLocation()).Size();
                     if (dist < closestDist)
                     {
@@ -65,19 +73,19 @@
 
                 if (closest != nullptr)
                 {
-                    SetActorLocation(closest.GetActorLocation());
+                    SetActorLocation(FVector(closest.GetActorLocation().X, closest.GetActorLocation().Y, GetActorLocation().Z));
                     CurrentCell = closest;
                 }
             }
         }
     }
 
+    // Checkando si se agarra o no el bicho
     UFUNCTION(BlueprintOverride)
     void Tick(float DeltaSeconds)
     {
         CheckMouseInput();
 
-        // Arrastrar con el mouse
         if (bDragging)
         {
             APlayerController pc = GetWorld().GetGameInstance().GetFirstLocalPlayerController();
@@ -95,4 +103,4 @@
     }
 
 
-    }
+}

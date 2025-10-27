@@ -15,6 +15,8 @@ class AGridSystem : AActor
     UPROPERTY()
     TArray<ACell> Cells;
 
+
+    // Spawn del grid
     UFUNCTION(BlueprintOverride)
     void BeginPlay()
     {
