@@ -5,9 +5,7 @@ class ACameraPawn : APawn
     
     ACameraPawn()
     {
-        camera.RelativeRotation = FRotator(-40.0, 0.0, 0.0);
+        camera.RelativeRotation = FRotator(-20.0, 0.0, 0.0);
         camera.RelativeLocation = FVector(-800.0, 0.0, 300.0);
     }
-
-
 }

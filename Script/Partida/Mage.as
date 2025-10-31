@@ -1,6 +1,9 @@
 class AMage : AActor
 {
     UPROPERTY(DefaultComponent, RootComponent)
+    USceneComponent Root;
+
+    UPROPERTY(DefaultComponent)
     USkeletalMeshComponent Body;
 
     UPROPERTY(DefaultComponent, Attach = "Body")
@@ -11,6 +14,8 @@ class AMage : AActor
     UPROPERTY()
     AGridSystem GridSystem; 
 
+    // UPROPERTY()
+    // UAnimationAsset idleAnimation;
 
     bool bDragging = false;
 
@@ -26,10 +31,11 @@ class AMage : AActor
         Body.SetCollisionProfileName(FName("BlockAll"));
         Body.SetGenerateOverlapEvents(true);    
 
-        SetActorLocation(FVector(GetActorLocation().X,GetActorLocation().Y, -30));
-        SetActorRotation(FRotator(GetActorRotation().Pitch, -90, GetActorRotation().Roll));
+        SetActorLocation(FVector(GetActorLocation().X,GetActorLocation().Y, -90));
+        SetActorRotation(FRotator(GetActorRotation().Pitch, 90, GetActorRotation().Roll));
 
         EnableInput(GetWorld().GetGameInstance().GetFirstLocalPlayerController());
+        // Body.PlayAnimation(idleAnimation, true);
     }
 
     // Input, hace al mago agarrable
