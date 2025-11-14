@@ -1,4 +1,4 @@
-class AUCatGameState : AGameState
+class AUCatGameState : AGameStateBase
 {
     UPROPERTY()
     TArray<AMage> playerMages;

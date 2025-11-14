@@ -12,22 +12,31 @@ class UCatGameInput : UEnhancedInputComponent
 	ACell originalCell;
 	FVector originalLocation;
 
+	bool IsCellOccupied(ACell cell, TArray<AMage> allMages)
+	{
+		for (AMage m : allMages)
+		{
+			if (m.CurrentCell == cell)
+				return true;
+		}
+		return false;
+	}
+
 	UFUNCTION(BlueprintOverride)
 	void BeginPlay()
 	{
 		controller = Cast<ACatGameController>(GetOwner());
 		controller.PushInputComponent(this);
 
-		controller.bShowMouseCursor = true;																						
+		controller.bShowMouseCursor = true;
 
 		UEnhancedInputLocalPlayerSubsystem subsys = UEnhancedInputLocalPlayerSubsystem::Get(controller);
-		subsys.AddMappingContext(ctx, Priority = 1, Options = FModifyContextOptions());											
+		subsys.AddMappingContext(ctx, Priority = 1, Options = FModifyContextOptions());
 
 		BindAction(leftClick, ETriggerEvent::Started, FEnhancedInputActionHandlerDynamicSignature(this, n"handledLeftPressed"));
 		BindAction(leftClick, ETriggerEvent::Triggered, FEnhancedInputActionHandlerDynamicSignature(this, n"handledLeftMove"));
 		BindAction(leftClick, ETriggerEvent::Ongoing, FEnhancedInputActionHandlerDynamicSignature(this, n"handledLeftMove"));
 		BindAction(leftClick, ETriggerEvent::Completed, FEnhancedInputActionHandlerDynamicSignature(this, n"handledLeftReleased"));
-		BindAction(leftClick, ETriggerEvent::Canceled, FEnhancedInputActionHandlerDynamicSignature(this, n"handledLeftReleased"));
 	}
 
 	UFUNCTION()
@@ -79,7 +88,9 @@ class UCatGameInput : UEnhancedInputComponent
 		AMage mage = controller.SelectedMage;
 		ACell closest = mage.GetClosestCell(mage.GetActorLocation());
 
-		if (closest != nullptr && closest.CurrentColor == ECellColor::Movement)
+		auto gs = Cast<AUCatGameState>(GetWorld().GetGameState());
+		bool cellOcup = IsCellOccupied(closest, gs.playerMages);
+		if (closest != nullptr && closest.CurrentColor == ECellColor::Movement && !cellOcup)
 		{
 			mage.SetActorLocation(FVector(closest.GetActorLocation().X, closest.GetActorLocation().Y, mage.GetActorLocation().Z));
 			mage.CurrentCell = closest;

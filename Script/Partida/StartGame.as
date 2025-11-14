@@ -40,10 +40,9 @@ class AStartGame : AActor
         }
         
 
-        // auto gs = Cast<AUCatGameState>(GetWorld().GetGameState());
-        // if(gs != nullptr)
-        //     gs.playerTurn = true;
-        // gs.playerMages = SelectedMages;
+        auto gs = Cast<AUCatGameState>(GetWorld().GetGameState());
+        if(gs != nullptr)
+            gs.playerMages = SelectedMages;
 
     }
 
