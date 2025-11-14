@@ -1,16 +1,19 @@
-class ACameraGameMode : AGameModeBase
+class ACatGameGameMode : AGameModeBase
 {
-    ACameraGameMode()
+    ACatGameGameMode()
     {
-        DefaultPawnClass = ACameraPawn::StaticClass();
+        DefaultPawnClass = ACatGamePawn::StaticClass();
     }
 
     UFUNCTION(BlueprintOverride)
     void BeginPlay()
     {
         APlayerController pc = GetWorld().GetGameInstance().GetFirstLocalPlayerController();
-        pc.bShowMouseCursor = true;
-        pc.bEnableClickEvents =true;
-        pc.bEnableMouseOverEvents = true;
+        if (pc != nullptr)
+        {
+            pc.bShowMouseCursor = true;
+            pc.bEnableClickEvents = true;
+            pc.bEnableMouseOverEvents = true;
+        }
     }
 }

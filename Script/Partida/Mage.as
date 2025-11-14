@@ -1,112 +1,189 @@
 class AMage : AActor
 {
-    UPROPERTY(DefaultComponent, RootComponent)
-    USceneComponent Root;
+	UPROPERTY(DefaultComponent, RootComponent)
+	USceneComponent Root;
 
-    UPROPERTY(DefaultComponent)
-    USkeletalMeshComponent Body;
+	UPROPERTY(DefaultComponent)
+	USkeletalMeshComponent Body;
+	default Body.SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	default Body.SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Overlap);
+	default Body.SetGenerateOverlapEvents(true);
 
-    UPROPERTY(DefaultComponent, Attach = "Body")
-    USphereComponent Collision;
+	UPROPERTY(DefaultComponent, Attach = "Body")
+	USphereComponent Collision;
 
-    ACell CurrentCell;
-    
-    UPROPERTY()
-    AGridSystem GridSystem; 
+	ACell CurrentCell;
 
-    // UPROPERTY()
-    // UAnimationAsset idleAnimation;
+	UPROPERTY()
+	AGridSystem GridSystem;
 
-    bool bDragging = false;
+	int Hp = 100;
+	int Atk = 20;
 
+	UPROPERTY()
+	EMageType TypeMage;
 
-    // Creación del mago con sus collisiones
-    UFUNCTION(BlueprintOverride)
-    void BeginPlay()
-    {
-        Collision.SetSphereRadius(50.0);
-        Collision.SetGenerateOverlapEvents(true);
+	ACell GetClosestCell(FVector Pos)
+	{
+		if (GridSystem == nullptr || GridSystem.Cells.Num() == 0)
+			return nullptr;
 
-        Body.SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-        Body.SetCollisionProfileName(FName("BlockAll"));
-        Body.SetGenerateOverlapEvents(true);    
+		float closestDist = 999999.0;
+		ACell closest = nullptr;
 
-        SetActorLocation(FVector(GetActorLocation().X,GetActorLocation().Y, -90));
-        SetActorRotation(FRotator(GetActorRotation().Pitch, 90, GetActorRotation().Roll));
+		for (int i = 0; i < GridSystem.Cells.Num(); i++)
+		{
+			ACell cell = GridSystem.Cells[i];
+			float dist = (cell.GetActorLocation() - Pos).Size();
+			if (dist < closestDist)
+			{
+				closestDist = dist;
+				closest = cell;
+			}
+		}
 
-        EnableInput(GetWorld().GetGameInstance().GetFirstLocalPlayerController());
-        // Body.PlayAnimation(idleAnimation, true);
-    }
+		return closest;
+	}
 
-    // Input, hace al mago agarrable
-    void CheckMouseInput()
-    {
-        APlayerController pc = GetWorld().GetGameInstance().GetFirstLocalPlayerController();
-        if (pc == nullptr) return;
+	UFUNCTION(BlueprintOverride)
+	void BeginPlay()
+	{
+		Collision.SetSphereRadius(50.0);
+		Collision.SetGenerateOverlapEvents(true);
 
-        FHitResult hit;
+		Body.SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		Body.SetCollisionProfileName(FName("BlockAll"));
+		Body.SetGenerateOverlapEvents(true);
 
-        if (pc.WasInputKeyJustPressed(EKeys::LeftMouseButton))
-        {
-            if (pc.GetHitResultUnderCursorByChannel(ETraceTypeQuery::TraceTypeQuery1, false, hit))
-            {
-                if (hit.GetActor() == this)
-                {
-                    bDragging = true;
-                }
-            }
-        }
+		SetActorLocation(FVector(GetActorLocation().X, GetActorLocation().Y, -90));
+		SetActorRotation(FRotator(GetActorRotation().Pitch, -90, GetActorRotation().Roll));
+	}
 
-        if (pc.WasInputKeyJustReleased(EKeys::LeftMouseButton) && bDragging)
-        {
-            bDragging = false;
+	UFUNCTION()
+	TArray<FIntPoint> GetMovements()
+	{
+		TArray<FIntPoint> r;
+		if (TypeMage == EMageType::Mage_Mage)
+		{
+			FIntPoint p; p.X = 1; p.Y = 0; r.Add(p);
+		}
+		else if (TypeMage == EMageType::Mage_Knigth)
+		{
+			FIntPoint p;
+			p.X = 2; p.Y = 0; r.Add(p);
+			p.X = -2; p.Y = 0; r.Add(p);
+			p.X = 0; p.Y = 2; r.Add(p);
+			p.X = 0; p.Y = -2; r.Add(p);
+		}
+		else if (TypeMage == EMageType::Mage_Priest)
+		{
+			FIntPoint p;
+			for (int i = 1; i < 8; i++)
+			{
+				p.X = i; p.Y = i; r.Add(p);
+				p.X = -i; p.Y = i; r.Add(p);
+				p.X = i; p.Y = -i; r.Add(p);
+				p.X = -i; p.Y = -i; r.Add(p);
+			}
+		}
+		else if (TypeMage == EMageType::Mage_Shielder)
+		{
+			FIntPoint p;
+			for (int i = 1; i < 8; i++)
+			{
+				p.X = i; p.Y = 0; r.Add(p);
+				p.X = -i; p.Y = 0; r.Add(p);
+				p.X = 0; p.Y = i; r.Add(p);
+				p.X = 0; p.Y = -i; r.Add(p);
+			}
+		}
+		return r;
+	}
 
-            if (GridSystem != nullptr && GridSystem.Cells.Num() > 0)
-            {
-                float closestDist = 999999.0;
-                ACell closest = nullptr;
-                for (int i = 0; i < GridSystem.Cells.Num(); i++)
-                {
-                    ACell cell = GridSystem.Cells[i];
-                    // Print("Location cell" + cell.GetActorLocation());
-                    float dist = (cell.GetActorLocation() - GetActorLocation()).Size();
-                    if (dist < closestDist)
-                    {
-                        closestDist = dist;
-                        closest = cell;
-                    }
-                }
+	UFUNCTION()
+	TArray<FIntPoint> GetAttacks()
+	{
+		TArray<FIntPoint> r;
+		if (TypeMage == EMageType::Mage_Mage)
+		{
+			FIntPoint p;
+			for (int i = 1; i <= 5; i++)
+			{
+				p.X = i; p.Y = 0; r.Add(p);
+				p.X = -i; p.Y = 0; r.Add(p);
+			}
+		}
+		else if (TypeMage == EMageType::Mage_Knigth)
+		{
+			FIntPoint p;
+			p.X = 1; p.Y = 0; r.Add(p);
+			p.X = -1; p.Y = 0; r.Add(p);
+			p.X = 0; p.Y = 1; r.Add(p);
+			p.X = 0; p.Y = -1; r.Add(p);
+		}
+		else if (TypeMage == EMageType::Mage_Priest)
+		{
+			FIntPoint p;
+			p.X = 1; p.Y = 0; r.Add(p);
+			p.X = -1; p.Y = 0; r.Add(p);
+			p.X = 0; p.Y = 1; r.Add(p);
+			p.X = 0; p.Y = -1; r.Add(p);
+		}
+		else if (TypeMage == EMageType::Mage_Shielder)
+		{
+			FIntPoint p;
+			for (int i = 1; i < 8; i++)
+			{
+				p.X = i; p.Y = i; r.Add(p);
+				p.X = -i; p.Y = i; r.Add(p);
+				p.X = i; p.Y = -i; r.Add(p);
+				p.X = -i; p.Y = -i; r.Add(p);
+			}
+		}
+		return r;
+	}
 
-                if (closest != nullptr)
-                {
-                    SetActorLocation(FVector(closest.GetActorLocation().X, closest.GetActorLocation().Y, GetActorLocation().Z));
-                    CurrentCell = closest;
-                }
-            }
-        }
-    }
+	UFUNCTION()
+	void HighlightMovement()
+	{
+		if (GridSystem == nullptr || CurrentCell == nullptr)
+			return;
 
-    // Checkando si se agarra o no el bicho
-    UFUNCTION(BlueprintOverride)
-    void Tick(float DeltaSeconds)
-    {
-        CheckMouseInput();
+		for (ACell cell : GridSystem.Cells)
+			cell.ChangeColor(ECellColor::Normal);
 
-        if (bDragging)
-        {
-            APlayerController pc = GetWorld().GetGameInstance().GetFirstLocalPlayerController();
-            if (pc != nullptr)
-            {
-                FVector WorldPos, WorldDir;
-                if (pc.DeprojectMousePositionToWorld(WorldPos, WorldDir))
-                {
-                    float t = (GetActorLocation().Z - WorldPos.Z) / WorldDir.Z;
-                    FVector NewLoc = WorldPos + WorldDir * t;
-                    SetActorLocation(NewLoc);
-                }
-            }
-        }
-    }
+		TArray<FIntPoint> moves = GetMovements();
+		for (FIntPoint move : moves)
+		{
+			int targetX = CurrentCell.GridX + move.X;
+			int targetY = CurrentCell.GridY + move.Y;
 
+			for (ACell cell : GridSystem.Cells)
+			{
+				if (cell.GridX == targetX && cell.GridY == targetY)
+					cell.ChangeColor(ECellColor::Movement);
+			}
+		}
 
+		TArray<FIntPoint> attacks = GetAttacks();
+		for (FIntPoint atk : attacks)
+		{
+			int targetX = CurrentCell.GridX + atk.X;
+			int targetY = CurrentCell.GridY + atk.Y;
+
+			for (ACell cell : GridSystem.Cells)
+			{
+				if (cell.GridX == targetX && cell.GridY == targetY)
+					cell.ChangeColor(ECellColor::Attack);
+			}
+		}
+	}
+
+	UFUNCTION()
+	void ResetHighlight()
+	{
+		if (GridSystem == nullptr) return;
+		for (ACell cell : GridSystem.Cells)
+			cell.ChangeColor(ECellColor::Normal);
+	}
 }

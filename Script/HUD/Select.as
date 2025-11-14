@@ -1,10 +1,13 @@
-class ASelectHUD : AHUD{
+class USelectWidget : UUserWidget{
+
+    UFUNCTION()
+    void ConfirmChoice(){
+        
+    }
+
     UFUNCTION(BlueprintEvent)
     void OpenMenu(){
         PrintError("this should be overriten");
     }
-
-    UPROPERTY()
-    bool isMenuOpen = true;
     
 }
