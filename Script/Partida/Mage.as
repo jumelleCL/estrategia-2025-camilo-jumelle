@@ -1,5 +1,6 @@
 class AMage : AActor
 {
+
 	UPROPERTY(DefaultComponent, RootComponent)
 	USceneComponent Root;
 
@@ -19,6 +20,9 @@ class AMage : AActor
 
 	int Hp = 100;
 	int Atk = 20;
+
+	UPROPERTY()
+	UTexture2D IconTexture;
 
 	UPROPERTY()
 	EMageType TypeMage;

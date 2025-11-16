@@ -43,6 +43,8 @@ class UCatGameInput : UEnhancedInputComponent
 	private void handledLeftPressed(FInputActionValue ActionValue, float32 ElapsedTime,
 							float32 TriggeredTime, const UInputAction SourceAction)
 	{
+		auto gs = Cast<AUCatGameState>(GetWorld().GetGameState());
+		if(gs.PlayerTurn == false) return;
 		if (controller == nullptr)
 			return;
 
@@ -65,6 +67,8 @@ class UCatGameInput : UEnhancedInputComponent
 	private void handledLeftMove(FInputActionValue ActionValue, float32 ElapsedTime,
 						 float32 TriggeredTime, const UInputAction SourceAction)
 	{
+		auto gs = Cast<AUCatGameState>(GetWorld().GetGameState());
+		if(gs.PlayerTurn == false) return;
 		if (!bDragging || controller == nullptr || controller.SelectedMage == nullptr)
 			return;
 
@@ -82,18 +86,21 @@ class UCatGameInput : UEnhancedInputComponent
 	private void handledLeftReleased(FInputActionValue ActionValue, float32 ElapsedTime,
 							 float32 TriggeredTime, const UInputAction SourceAction)
 	{
+		auto gs = Cast<AUCatGameState>(GetWorld().GetGameState());
+		if(gs.PlayerTurn == false) return;
 		if (controller == nullptr || controller.SelectedMage == nullptr)
 			return;
 
 		AMage mage = controller.SelectedMage;
 		ACell closest = mage.GetClosestCell(mage.GetActorLocation());
 
-		auto gs = Cast<AUCatGameState>(GetWorld().GetGameState());
 		bool cellOcup = IsCellOccupied(closest, gs.playerMages);
 		if (closest != nullptr && closest.CurrentColor == ECellColor::Movement && !cellOcup)
 		{
 			mage.SetActorLocation(FVector(closest.GetActorLocation().X, closest.GetActorLocation().Y, mage.GetActorLocation().Z));
 			mage.CurrentCell = closest;
+
+			gs.PlayerTurn = false;
 		}
 		else
 		{

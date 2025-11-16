@@ -4,9 +4,6 @@ class AStartGame : AActor
     TArray<TSubclassOf<AMage>> Magitos;
 
     UPROPERTY()
-    TArray<AMage> SelectedMages;
-
-    UPROPERTY()
     TSubclassOf<UUserWidget> WidgetClass;
 
     
@@ -19,31 +16,20 @@ class AStartGame : AActor
     void BeginPlay()
     {
 
-        // APlayerController pc = GetWorld().GameInstance.GetFirstLocalPlayerController();
+        APlayerController pc = GetWorld().GameInstance.GetFirstLocalPlayerController();
 
-        // SelectorWidget = Cast<UUserWidget>(WidgetBlueprint::CreateWidget(WidgetClass, pc));
-        // Widget::SetInputMode_UIOnlyEx(pc, SelectorWidget);
-        // SelectorWidget.AddToViewport(); 
+        SelectorWidget = Cast<UUserWidget>(WidgetBlueprint::CreateWidget(WidgetClass, pc));
+        // Widget::SetInputMode_GameAndUIEx(pc, SelectorWidget);
         // pc.bShowMouseCursor = true;
-
-
-        for ( int i = 0; i < Magitos.Max(); i++)
-        {
-            AMage magoSpawn = SpawnActor(Magitos[i]);
-            magoSpawn.GridSystem =  GridSystem;
-            ACell cell = GridSystem.Cells[i];
-            magoSpawn.CurrentCell = cell;
-
-            SelectedMages.Add(magoSpawn);
-
-            magoSpawn.SetActorLocation(FVector(cell.GetActorLocation().X, cell.GetActorLocation().Y, cell.GetActorLocation().Z + 50));
-        }
-        
+        SelectorWidget.AddToViewport(); 
 
         auto gs = Cast<AUCatGameState>(GetWorld().GetGameState());
         if(gs != nullptr)
-            gs.playerMages = SelectedMages;
+            gs.PlayerTurn = true;
+            gs.GridSystem = GridSystem;
 
     }
+
+   
 
 }
