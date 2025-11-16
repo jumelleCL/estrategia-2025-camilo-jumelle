@@ -4,6 +4,12 @@ class UMainWidget : UUserWidget {
     TSubclassOf<UUserWidget> SelectorWidgetBP;
 
     UFUNCTION()
+    void SetDifficulty(bool isHard){
+		auto gs = Cast<AUCatGameState>(GetWorld().GetGameState());
+        gs.HardDifficulty = isHard;
+    }
+
+    UFUNCTION()
     void StartMenu(UWidget TargetVBox) {
         if (TargetVBox != nullptr)
             TargetVBox.SetVisibility(ESlateVisibility::Hidden);
