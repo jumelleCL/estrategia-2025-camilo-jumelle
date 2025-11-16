@@ -1,35 +1,34 @@
 class AStartGame : AActor
 {
-    UPROPERTY()
-    TArray<TSubclassOf<AMage>> Magitos;
+	UPROPERTY()
+	TArray<TSubclassOf<AMage>> Magitos;
 
-    UPROPERTY()
-    TSubclassOf<UUserWidget> WidgetClass;
+	UPROPERTY()
+	TSubclassOf<UUserWidget> WidgetClass;
 
-    
-    UUserWidget SelectorWidget; 
+	UUserWidget SelectorWidget;
 
-    UPROPERTY()
-    AGridSystem GridSystem; 
+	UPROPERTY()
+	AGridSystem GridSystem;
 
-    UFUNCTION(BlueprintOverride)
-    void BeginPlay()
-    {
+	UPROPERTY()
+	TSubclassOf<UEndGameWidget> EndGameWidgetBP;
 
-        APlayerController pc = GetWorld().GameInstance.GetFirstLocalPlayerController();
+	UFUNCTION(BlueprintOverride)
+	void BeginPlay()
+	{
 
-        SelectorWidget = Cast<UUserWidget>(WidgetBlueprint::CreateWidget(WidgetClass, pc));
-        // Widget::SetInputMode_GameAndUIEx(pc, SelectorWidget);
-        // pc.bShowMouseCursor = true;
-        SelectorWidget.AddToViewport(); 
+		APlayerController pc = GetWorld().GameInstance.GetFirstLocalPlayerController();
 
-        auto gs = Cast<AUCatGameState>(GetWorld().GetGameState());
-        if(gs != nullptr)
-            gs.PlayerTurn = true;
-            gs.GridSystem = GridSystem;
+		SelectorWidget = Cast<UUserWidget>(WidgetBlueprint::CreateWidget(WidgetClass, pc));
+		// Widget::SetInputMode_GameAndUIEx(pc, SelectorWidget);
+		// pc.bShowMouseCursor = true;
+		SelectorWidget.AddToViewport();
 
-    }
-
-   
-
+		auto gs = Cast<AUCatGameState>(GetWorld().GetGameState());
+		if (gs != nullptr)
+			gs.PlayerTurn = true;
+		gs.GridSystem = GridSystem;
+		gs.allMages = Magitos;
+	}
 }
