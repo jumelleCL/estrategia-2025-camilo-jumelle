@@ -35,9 +35,6 @@ class AMage : AActor
 
 	UPROPERTY()
 	EMageType TypeMage;
-	
-	UPROPERTY()
-	TSubclassOf<UEndGameWidget> EndGameWidgetBP;
 
 
 	ACell GetClosestCell(FVector Pos)
@@ -110,6 +107,8 @@ class AMage : AActor
 
 		if (Hp <= 0)
 		{
+			auto gs = Cast<AUCatGameState>(GetWorld().GetGameState());
+			if (IsPlayerOwner) gs.playerMages.Remove(this); else gs.enemyMages.Remove(this);
 			DestroyActor();
 			TArray<AMage> allMages;
 			GetAllActorsOfClass(allMages);
@@ -124,20 +123,21 @@ class AMage : AActor
 				else
 					enemyAlive = true;
 			}
-
+			
+			
 			if (!playerAlive)
 			{
 				APlayerController pc = GetWorld().GameInstance.GetFirstLocalPlayerController();
-    			UEndGameWidget w1 = Cast<UEndGameWidget>(WidgetBlueprint::CreateWidget(EndGameWidgetBP, pc));
-				w1.Setup(FText::FromString("Derrota"), FText::FromString("Perdiste la partida"));
+    			UEndGameWidget w1 = Cast<UEndGameWidget>(WidgetBlueprint::CreateWidget(gs.EndGameWidgetBP, pc));
+				w1.Setup(FText::FromString("You lose"), FText::FromString("Noo, all your kitties has lost their lives in battle :("));
 				w1.AddToViewport();
 			}
 
 			if (!enemyAlive)
 			{
 				APlayerController pc = GetWorld().GameInstance.GetFirstLocalPlayerController();
-    			UEndGameWidget w2 = Cast<UEndGameWidget>(WidgetBlueprint::CreateWidget(EndGameWidgetBP, pc));
-				w2.Setup(FText::FromString("Victoria"), FText::FromString("Ganaste la partida"));
+    			UEndGameWidget w2 = Cast<UEndGameWidget>(WidgetBlueprint::CreateWidget(gs.EndGameWidgetBP, pc));
+				w2.Setup(FText::FromString("You win!"), FText::FromString("You had win... but at what cost, you just killed a bunch of kitties!"));
 				w2.AddToViewport();
 			}
 		}

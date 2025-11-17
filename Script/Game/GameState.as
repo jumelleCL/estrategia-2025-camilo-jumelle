@@ -15,6 +15,9 @@ class AUCatGameState : AGameStateBase
 	UPROPERTY()
 	TArray<AMage> enemyMages;
 
+	UPROPERTY()
+	TSubclassOf<UEndGameWidget> EndGameWidgetBP;
+
 	bool PlayerTurn = true;
 	bool GameStart = false;
 	bool HardDifficulty;
@@ -113,7 +116,6 @@ class AUCatGameState : AGameStateBase
 			return;
 		}
 
-		// Filtrar enemigos válidos
 		TArray<AMage> validEnemies;
 		for (AMage e : enemyMages)
 		{
@@ -127,6 +129,49 @@ class AUCatGameState : AGameStateBase
 			return;
 		}
 
+		bool noMoves = true;
+		bool noAttacks = true;
+
+		for (AMage e : validEnemies)
+		{
+			for (FIntPoint atk : e.GetAttacks())
+			{
+				int tx = e.CurrentCell.GridX - atk.X;
+				int ty = e.CurrentCell.GridY - atk.Y;
+				for (AMage p : playerMages)
+				{
+					if (p.CurrentCell.GridX == tx && p.CurrentCell.GridY == ty)
+						noAttacks = false;
+				}
+			}
+
+			for (FIntPoint mv : e.GetMovements())
+			{
+				int nx = e.CurrentCell.GridX - mv.X;
+				int ny = e.CurrentCell.GridY - mv.Y;
+				for (ACell c : GridSystem.Cells)
+				{
+					if (c.GridX == nx && c.GridY == ny && IsCellOccupied(c) == nullptr)
+						noMoves = false;
+				}
+			}
+		}
+
+		if (noMoves && noAttacks)
+		{
+			APlayerController pc = GetWorld().GameInstance.GetFirstLocalPlayerController();
+			if (EndGameWidgetBP != nullptr)
+			{
+				UEndGameWidget w = Cast<UEndGameWidget>(WidgetBlueprint::CreateWidget(EndGameWidgetBP, pc));
+				w.Setup(FText::FromString("You win!"), FText::FromString("The enemy has ended without movements lol"));
+				w.AddToViewport();
+				Widget::SetInputMode_GameAndUIEx(pc, w, EMouseLockMode::DoNotLock);
+				pc.bShowMouseCursor = true;
+			}
+			return;
+		}
+
+
 		int r = Math::RandRange(0, validEnemies.Num() - 1);
 		AMage enemy = validEnemies[r];
 
@@ -138,7 +183,6 @@ class AUCatGameState : AGameStateBase
 		for (ACell c : GridSystem.Cells)
 			c.ChangeColor(ECellColor::Normal);
 
-		// Intentar atacar primero
 		AMage target = nullptr;
 		for (FIntPoint atk : enemy.GetAttacks())
 		{
@@ -168,7 +212,6 @@ class AUCatGameState : AGameStateBase
 		}
 		else
 		{
-			// Siempre intentar moverse
 			TArray<FIntPoint> possibleMoves;
 			for (FIntPoint move : enemy.GetMovements())
 			{
@@ -185,7 +228,6 @@ class AUCatGameState : AGameStateBase
 
 			if (possibleMoves.Num() == 0)
 			{
-				// Si no hay ataque ni movimiento válido, moverse a la celda más cercana vacía
 				for (ACell c : GridSystem.Cells)
 				{
 					if (IsCellOccupied(c) == nullptr)
@@ -243,7 +285,7 @@ class AUCatGameState : AGameStateBase
 		{
 			PendingTarget.Hp -= PendingEnemy.Atk;
 			PendingTarget.UpdateLife();
-			Print("Enemigo " + PendingEnemy.Name + " golpeó a " + PendingTarget.Name);
+			// Print("Enemigo " + PendingEnemy.Name + " golpeó a " + PendingTarget.Name);
 			if (PendingTarget.Hp <= 0)
 				playerMages.Remove(PendingTarget);
 		}

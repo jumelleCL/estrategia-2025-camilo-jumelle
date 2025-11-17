@@ -14,6 +14,26 @@ class AStartGame : AActor
 	UPROPERTY()
 	TSubclassOf<UEndGameWidget> EndGameWidgetBP;
 
+	UPROPERTY()
+	AStaticMeshActor SkyMesh;
+
+	float TimeAccumulator = 0;
+
+	// UFUNCTION(BlueprintOverride)
+	// void Tick(float DeltaTime)
+	// {
+	// 	TimeAccumulator += DeltaTime;
+	// 	if (TimeAccumulator < 0.05)
+	// 		return;
+	// 	TimeAccumulator = 0;
+
+	// 	if (SkyMesh == nullptr)
+	// 		return;
+	// 	FRotator r = SkyMesh.GetActorRotation();
+	// 	r.Yaw += 1.0;
+	// 	SkyMesh.SetActorRotation(r);
+	// }
+
 	UFUNCTION(BlueprintOverride)
 	void BeginPlay()
 	{
@@ -28,6 +48,7 @@ class AStartGame : AActor
 		auto gs = Cast<AUCatGameState>(GetWorld().GetGameState());
 		if (gs != nullptr)
 			gs.PlayerTurn = true;
+		gs.EndGameWidgetBP = EndGameWidgetBP;
 		gs.GridSystem = GridSystem;
 		gs.allMages = Magitos;
 	}

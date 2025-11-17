@@ -3,7 +3,6 @@ class UCatGameInput : UEnhancedInputComponent
 	UPROPERTY(Category = "Inputs")
 	UInputAction leftClick;
 
-	
 	UPROPERTY(Category = "Inputs")
 	UInputAction rightClick;
 
@@ -19,15 +18,48 @@ class UCatGameInput : UEnhancedInputComponent
 
 	AMage IsCellOccupied(ACell cell)
 	{
-		
+
 		TArray<AMage> allMages;
-		GetAllActorsOfClass(allMages); 
+		GetAllActorsOfClass(allMages);
 		for (AMage m : allMages)
 		{
 			if (m.CurrentCell == cell)
 				return m;
 		}
 		return nullptr;
+	}
+
+	bool HasAnyAction()
+	{
+		auto gs = Cast<AUCatGameState>(GetWorld().GetGameState());
+		for (AMage p : gs.playerMages)
+		{
+			if (p == nullptr || p.CurrentCell == nullptr)
+				continue;
+
+			for (FIntPoint m : p.GetMovements())
+			{
+				int x = p.CurrentCell.GridX + m.X;
+				int y = p.CurrentCell.GridY + m.Y;
+				for (ACell c : gs.GridSystem.Cells)
+				{
+					if (c.GridX == x && c.GridY == y && gs.IsCellOccupied(c) == nullptr)
+						return true;
+				}
+			}
+
+			for (FIntPoint a : p.GetAttacks())
+			{
+				int x = p.CurrentCell.GridX + a.X;
+				int y = p.CurrentCell.GridY + a.Y;
+				for (AMage e : gs.enemyMages)
+				{
+					if (e.CurrentCell.GridX == x && e.CurrentCell.GridY == y)
+						return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	UFUNCTION(BlueprintOverride)
@@ -40,13 +72,11 @@ class UCatGameInput : UEnhancedInputComponent
 
 		UEnhancedInputLocalPlayerSubsystem subsys = UEnhancedInputLocalPlayerSubsystem::Get(controller);
 		subsys.AddMappingContext(ctx, Priority = 1, Options = FModifyContextOptions());
-		
+
 		hud = Cast<AInfoHUD>(controller.GetHUD());
 
-		// HUD
 		BindAction(rightClick, ETriggerEvent::Completed, FEnhancedInputActionHandlerDynamicSignature(this, n"handleRightPressed"));
 
-		// Movement / Atack char 
 		BindAction(leftClick, ETriggerEvent::Started, FEnhancedInputActionHandlerDynamicSignature(this, n"handledLeftPressed"));
 		BindAction(leftClick, ETriggerEvent::Triggered, FEnhancedInputActionHandlerDynamicSignature(this, n"handledLeftMove"));
 		BindAction(leftClick, ETriggerEvent::Ongoing, FEnhancedInputActionHandlerDynamicSignature(this, n"handledLeftMove"));
@@ -58,7 +88,7 @@ class UCatGameInput : UEnhancedInputComponent
 							float32 TriggeredTime, const UInputAction SourceAction)
 	{
 		auto gs = Cast<AUCatGameState>(GetWorld().GetGameState());
-		if(gs.GameStart)
+		if (gs.GameStart)
 		{
 			hud.OpenMenu();
 		}
@@ -75,16 +105,23 @@ class UCatGameInput : UEnhancedInputComponent
 		return false;
 	}
 
-
 	UFUNCTION()
 	private void handledLeftPressed(FInputActionValue ActionValue, float32 ElapsedTime,
 							float32 TriggeredTime, const UInputAction SourceAction)
 	{
 		auto gs = Cast<AUCatGameState>(GetWorld().GetGameState());
-		if(gs.PlayerTurn == false) return;
+		if (gs.PlayerTurn == false)
+			return;
 		if (controller == nullptr)
 			return;
 
+
+		TArray<AActor> toIgnore;
+		for (AMage m : gs.enemyMages)
+			toIgnore.Add(m);
+		
+		FCollisionQueryParams params;
+		params.AddIgnoredActors(toIgnore); 
 		FHitResult hit;
 		if (controller.GetHitResultUnderCursorByChannel(ETraceTypeQuery::TraceTypeQuery1, false, hit))
 		{
@@ -97,7 +134,6 @@ class UCatGameInput : UEnhancedInputComponent
 				bDragging = true;
 				hitMage.HighlightMovement();
 			}
-
 		}
 	}
 
@@ -106,7 +142,8 @@ class UCatGameInput : UEnhancedInputComponent
 						 float32 TriggeredTime, const UInputAction SourceAction)
 	{
 		auto gs = Cast<AUCatGameState>(GetWorld().GetGameState());
-		if(gs.PlayerTurn == false) return;
+		if (gs.PlayerTurn == false)
+			return;
 		if (!bDragging || controller == nullptr || controller.SelectedMage == nullptr)
 			return;
 
@@ -125,7 +162,8 @@ class UCatGameInput : UEnhancedInputComponent
 							 float32 TriggeredTime, const UInputAction SourceAction)
 	{
 		auto gs = Cast<AUCatGameState>(GetWorld().GetGameState());
-		if(gs.PlayerTurn == false) return;
+		if (gs.PlayerTurn == false)
+			return;
 		if (controller == nullptr || controller.SelectedMage == nullptr)
 			return;
 
@@ -133,6 +171,16 @@ class UCatGameInput : UEnhancedInputComponent
 		ACell closest = mage.GetClosestCell(mage.GetActorLocation());
 
 		AMage cellOcup = IsCellOccupied(closest);
+
+		if (gs.playerMages.Num() == 0 || !HasAnyAction())
+		{
+			APlayerController pc = GetWorld().GameInstance.GetFirstLocalPlayerController();
+			UEndGameWidget w1 = Cast<UEndGameWidget>(WidgetBlueprint::CreateWidget(gs.EndGameWidgetBP, pc));
+			w1.Setup(FText::FromString("You lose!!!"), FText::FromString("You ended up without  movements! you need to plan before moving!"));
+			w1.AddToViewport();
+			return;
+		}
+
 		if (closest != nullptr && closest.CurrentColor == ECellColor::Movement && cellOcup == nullptr)
 		{
 			mage.SetActorLocation(FVector(closest.GetActorLocation().X, closest.GetActorLocation().Y, mage.GetActorLocation().Z));
@@ -141,7 +189,7 @@ class UCatGameInput : UEnhancedInputComponent
 			gs.PlayerTurn = false;
 			gs.EnemyTakeTurn();
 		}
-		else if(closest != nullptr && closest.CurrentColor == ECellColor::Attack && cellOcup != nullptr)
+		else if (closest != nullptr && closest.CurrentColor == ECellColor::Attack && cellOcup != nullptr)
 		{
 			cellOcup.Hp -= mage.Atk;
 			cellOcup.UpdateLife();
